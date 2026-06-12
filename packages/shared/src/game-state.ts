@@ -29,6 +29,10 @@ const SUIT_ORDER: Record<Suit, number> = {
  */
 export function sortHand(tiles: Tile[]): Tile[] {
   return [...tiles].sort((a, b) => {
+    // 混儿 always first
+    if (a.isHun && !b.isHun) return -1;
+    if (!a.isHun && b.isHun) return 1;
+    // Both hun or both non-hun: sort by suit then rank
     const suitDiff = SUIT_ORDER[a.suit] - SUIT_ORDER[b.suit];
     if (suitDiff !== 0) return suitDiff;
     return a.rank - b.rank;

@@ -60,6 +60,53 @@ describe('sortHand', () => {
   it('returns empty array for empty input', () => {
     expect(sortHand([])).toEqual([]);
   });
+
+  it('puts hun tiles at the leftmost position', () => {
+    const tiles: Tile[] = [
+      { suit: 'wan', rank: 1, id: 0, isHun: false },
+      { suit: 'tiao', rank: 2, id: 40, isHun: true },
+      { suit: 'tong', rank: 3, id: 70, isHun: false },
+    ];
+    const sorted = sortHand([...tiles]);
+    expect(sorted[0].isHun).toBe(true);
+    expect(sorted[0].suit).toBe('tiao');
+  });
+
+  it('sorts hun tiles among themselves by suit then rank', () => {
+    const tiles: Tile[] = [
+      { suit: 'wan', rank: 9, id: 32, isHun: true },
+      { suit: 'wan', rank: 1, id: 0, isHun: true },
+      { suit: 'tiao', rank: 1, id: 36, isHun: true },
+    ];
+    const sorted = sortHand([...tiles]);
+    // hun tiles: wan1, wan9, tiao1
+    expect(sorted[0].suit).toBe('wan');
+    expect(sorted[0].rank).toBe(1);
+    expect(sorted[1].suit).toBe('wan');
+    expect(sorted[1].rank).toBe(9);
+    expect(sorted[2].suit).toBe('tiao');
+    expect(sorted[2].rank).toBe(1);
+  });
+
+  it('sorts non-hun tiles after all hun tiles', () => {
+    const tiles: Tile[] = [
+      { suit: 'jian', rank: 1, id: 132, isHun: false },
+      { suit: 'wan', rank: 1, id: 0, isHun: false },
+      { suit: 'tiao', rank: 1, id: 40, isHun: true },
+      { suit: 'wan', rank: 5, id: 16, isHun: false },
+    ];
+    const sorted = sortHand([...tiles]);
+    // hun first
+    expect(sorted[0].isHun).toBe(true);
+    // then non-hun: wan1, wan5, jian1
+    expect(sorted[1].isHun).toBe(false);
+    expect(sorted[1].suit).toBe('wan');
+    expect(sorted[1].rank).toBe(1);
+    expect(sorted[2].suit).toBe('wan');
+    expect(sorted[2].rank).toBe(5);
+    expect(sorted[3].suit).toBe('jian');
+    expect(sorted[3].rank).toBe(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
