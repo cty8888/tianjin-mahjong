@@ -58,11 +58,11 @@ export default function PlayerHand({
 
     const clickable = isHuman && isLegal && onTileClick;
 
-    // Vertical tile: tall card, text rotated to read from side
-    // Stacked with flex-col in container
+    // Horizontal (face-on): tall card w-10 h-14
+    // Vertical (side view): wide card w-14 h-10
     const tileSize = isVertical
-      ? 'w-10 h-14'  // Tall like a standing mahjong tile
-      : 'w-10 h-14'; // Same — tall mahjong tiles
+      ? 'w-14 h-10'
+      : 'w-10 h-14';
 
     const gap = isDrawn ? (isVertical ? 'mt-3' : 'ml-3') : '';
 
@@ -87,9 +87,7 @@ export default function PlayerHand({
           .join(' ')}
         title={isHuman ? getTileName(tile) : '?'}
       >
-        <span className={isVertical ? 'rotate-90 text-[10px] whitespace-nowrap' : ''}>
-          {tileDisplay(tile, isHuman)}
-        </span>
+        <span>{tileDisplay(tile, isHuman)}</span>
         {isHuman && tile.isHun && (
           <span className="absolute -top-1 -right-1 text-[8px] bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
             混
