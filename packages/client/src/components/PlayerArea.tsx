@@ -34,9 +34,9 @@ function smallTileDisplay(tiles: Tile[]): string {
 
 const POSITION_ROTATE: Record<string, string> = {
   bottom: '',
-  right: 'rotate-90',
+  right: '',   // PlayerHand vertical handles this
   top: 'rotate-180',
-  left: '-rotate-90',
+  left: '',    // PlayerHand vertical handles this
 };
 
 const POSITION_ORIENTATION: Record<string, 'horizontal' | 'vertical'> = {

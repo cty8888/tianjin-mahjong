@@ -1,6 +1,7 @@
 // ---------------------------------------------------------------------------
 // PlayerHand component — displays a row of mahjong tiles for one player.
-// Supports horizontal (bottom/top) and vertical (left/right) orientations.
+// Horizontal (bottom/top): tiles side-by-side, tall cards.
+// Vertical (left/right): tiles stacked top-to-bottom, with rotated faces.
 // When holding 14 tiles, the drawn tile is visually separated.
 // ---------------------------------------------------------------------------
 
@@ -38,7 +39,6 @@ export default function PlayerHand({
   const legalSet = legalIndices ? new Set(legalIndices) : null;
   const isVertical = orientation === 'vertical';
   const hasDrawn = tiles.length === 14;
-  // First 13 are the sorted hand, last 1 is the drawn tile
   const handTiles = hasDrawn ? tiles.slice(0, 13) : tiles;
   const drawnTile = hasDrawn ? tiles[13] : null;
 
@@ -58,6 +58,14 @@ export default function PlayerHand({
 
     const clickable = isHuman && isLegal && onTileClick;
 
+    // Vertical tile: tall card, text rotated to read from side
+    // Stacked with flex-col in container
+    const tileSize = isVertical
+      ? 'w-10 h-14'  // Tall like a standing mahjong tile
+      : 'w-10 h-14'; // Same — tall mahjong tiles
+
+    const gap = isDrawn ? (isVertical ? 'mt-3' : 'ml-3') : '';
+
     return (
       <button
         key={isDrawn ? 'drawn' : tile.id}
@@ -65,22 +73,21 @@ export default function PlayerHand({
         disabled={!clickable}
         onClick={() => clickable && onTileClick(effectiveIndex)}
         className={[
-          'relative flex flex-col items-center justify-center rounded-md border font-bold',
+          'relative flex items-center justify-center rounded-md border font-bold',
           'transition-all duration-100 select-none',
-          isVertical ? 'w-14 h-10 text-[10px]' : 'w-10 h-14 text-xs',
-          // For vertical: write vertical text for AI tiles
-          isVertical && !isHuman ? 'leading-none' : 'leading-tight',
+          tileSize,
+          'text-xs',
           tileBg(tile, isHuman),
           ring,
           lift,
-          isDrawn ? (isVertical ? 'mt-3' : 'ml-3') : '',
+          gap,
           clickable ? 'cursor-pointer hover:brightness-110' : 'cursor-default',
         ]
           .filter(Boolean)
           .join(' ')}
         title={isHuman ? getTileName(tile) : '?'}
       >
-        <span className={`text-center ${isVertical ? 'whitespace-nowrap' : ''}`}>
+        <span className={isVertical ? 'rotate-90 text-[10px] whitespace-nowrap' : ''}>
           {tileDisplay(tile, isHuman)}
         </span>
         {isHuman && tile.isHun && (
@@ -92,16 +99,9 @@ export default function PlayerHand({
     );
   }
 
-  const containerClass = isVertical
-    ? 'flex flex-col items-center gap-0.5'
-    : 'flex flex-wrap justify-center items-end gap-0.5';
-
   return (
-    <div className={containerClass}>
-      {/* Sorted hand (13 tiles) */}
+    <div className={isVertical ? 'flex flex-col items-center gap-0.5' : 'flex flex-wrap justify-center items-end gap-0.5'}>
       {handTiles.map((tile, i) => renderTile(tile, i, false))}
-
-      {/* Drawn tile (14th, separated) */}
       {drawnTile && renderTile(drawnTile, 13, true)}
     </div>
   );
