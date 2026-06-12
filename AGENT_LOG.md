@@ -66,6 +66,42 @@
 
 ---
 
+### 2026-06-12 | Task 1 — 共享类型定义 (进行中)
+
+- **技能**：subagent-driven-development
+- **subagent**：general-purpose agent (background)
+- **任务**：创建 `packages/shared/src/types.ts` 和 `types.test.ts`
+- **分支**：phase1-shared
+- **状态**：✅ 完成
+- **产出**：commit `7c58be7` — types.ts + types.test.ts (14 tests)
+- **Spec 合规**：✅ — 11 个类型全部与 SPEC.md 一致
+- **代码质量**：✅ — 无问题
+
+---
+
+### 2026-06-12 | Task 2 — 牌系统 (进行中)
+
+- **技能**：subagent-driven-development
+- **subagent**：general-purpose agent (background)
+- **任务**：创建 `packages/shared/src/tile.ts` 和 `tile.test.ts`
+- **分支**：phase1-shared
+- **状态**：✅ 完成
+- **产出**：commit `09b25c9` — tile.ts + tile.test.ts (26 tests)
+- **Spec 合规**：✅
+- **代码质量**：✅ — Fisher-Yates 洗牌，纯函数设计
+
+---
+
+### 2026-06-12 | Task 3 — 牌墙操作 (进行中)
+
+- **技能**：subagent-driven-development
+- **subagent**：general-purpose agent (background)
+- **任务**：创建 `packages/shared/src/deck.ts` 和 `deck.test.ts`
+- **分支**：phase1-shared
+- **状态**：implementer 已派发，等待完成...
+
+---
+
 ### 模板（后续使用）
 
 ```markdown
