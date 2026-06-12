@@ -385,6 +385,22 @@
 
 ---
 
+## 六、实现阶段记录
+
+### 迭代 4：四方麻将桌布局（2026-06-12）
+
+**触发**：用户要求"四个人要像麻将牌桌那样放置"。
+**问题**：原有 GameBoard 是垂直堆叠布局（AI 在上、人类在下），不符合真实的四方麻将桌体验。
+**解决**：
+- PlayerHand 增加 `orientation` prop（horizontal/vertical）
+- PlayerArea 增加 `position` prop（bottom/right/top/left）+ CSS rotate
+- GameBoard 重写为 CSS Grid 3×3 布局
+- 人类底部居中，AI 右/顶/左，中央显示牌墙剩余数
+**结果**：commit `529ddd9`，`vite build` 验证通过。
+**教训**：UI 布局应在 spec 阶段就用 mockup 确认，避免实现后大改。
+
+---
+
 ## 五、反思
 
 ### brainstorming 技能评价

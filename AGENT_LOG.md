@@ -172,17 +172,32 @@
 
 ---
 
+### 2026-06-12 | UI 改进 — 四方麻将桌布局
+
+- **技能**：手动实现（controller）
+- **分支**：ui-table-layout
+- **变更**：
+  - PlayerHand 增加 `orientation` prop（horizontal / vertical）
+  - PlayerArea 增加 `position` prop（bottom / right / top / left）+ CSS rotation
+  - GameBoard 从垂直堆叠改为 CSS Grid 3×3 四方桌布局
+  - 人类玩家底部居中，AI 分别在右/顶/左
+  - 中央绿色圆环显示剩余牌数
+- **产出**：commit `529ddd9`
+- **验证**：`vite build` 成功
+
+---
+
 ## 项目总结
 
 | 项目 | 数值 |
 |------|------|
-| 总 commits | 14 |
+| 总 commits | 18 |
 | 总测试数 | **194** (shared 168 + server 26) |
-| 代码行数 | ~5,200 行（含测试） |
+| 代码行数 | ~5,300 行（含测试） |
 | Subagent 派发 | 8 次 |
-| 分支 | phase1-shared, phase2-server, phase3-client → master |
+| 分支 | phase1-shared, phase2-server, phase3-client, ui-table-layout → master |
 | 技能触发 | brainstorming → writing-plans → subagent-driven-development |
-| 人工干预 | 规则修正（9 项）、配置编写、代码审查 |
+| 人工干预 | 规则修正（9 项）、配置编写、代码审查、UI 布局重设计 |
 
 ---
 
