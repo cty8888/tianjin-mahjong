@@ -390,11 +390,20 @@ describe('createGame', () => {
     }
   });
 
-  it('all hands are sorted', () => {
+  it('all hands are sorted (except dealer 14th tile is separated)', () => {
     const game = createGame(4);
     for (const player of game.players) {
-      const sorted = sortHand([...player.hand]);
-      expect(player.hand).toEqual(sorted);
+      if (player.seat === game.dealerSeat) {
+        // Dealer: first 13 sorted, 14th appended as "drawn"
+        const first13 = player.hand.slice(0, 13);
+        const sorted13 = sortHand(first13);
+        expect(first13).toEqual(sorted13);
+        expect(player.hand.length).toBe(14);
+      } else {
+        const sorted = sortHand([...player.hand]);
+        expect(player.hand).toEqual(sorted);
+        expect(player.hand.length).toBe(13);
+      }
     }
   });
 

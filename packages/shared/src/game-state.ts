@@ -125,7 +125,12 @@ export function dealTiles(game: GameState): GameState {
     }
   }
 
-  // Dealer gets 1 extra tile
+  // Sort everyone's 13-tile hand
+  for (const player of players) {
+    player.hand = sortHand(player.hand);
+  }
+
+  // Dealer gets 1 extra tile (appended to end — show as "drawn")
   const dealerTile = wall.shift()!;
   players[game.dealerSeat].hand.push(dealerTile);
 
@@ -212,13 +217,8 @@ export function createGame(playerCount: number): GameState {
     dealerSeat,
   };
 
-  // 7. Deal tiles
+  // 7. Deal tiles (handles sorting + dealer extra)
   dealTiles(game);
-
-  // 8. Sort all hands
-  for (const player of game.players) {
-    player.hand = sortHand(player.hand);
-  }
 
   return game;
 }

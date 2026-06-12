@@ -138,6 +138,8 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
     case 'discard': {
       const tileIndex = action.tileIndex!;
       const discardedTile = player.hand.splice(tileIndex, 1)[0];
+      // Re-sort hand after discarding
+      player.hand = sortHand(player.hand);
 
       player.discards.push(discardedTile);
       game.lastDiscard = discardedTile;
@@ -182,12 +184,11 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
       const discardTile = game.lastDiscard!;
       performMingKong(player, discardTile);
 
-      // Draw replacement tile from wall tail
+      // Draw replacement tile from wall tail (don't sort — stays separated)
       const drawResult = drawReplacementTile(game.wall);
       if (drawResult.tile) {
         game.wall = drawResult.remaining;
         player.hand.push(drawResult.tile);
-        player.hand = sortHand(player.hand);
       }
 
       game.lastDiscard = null;
@@ -201,12 +202,11 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
       const kongTiles = canAnKong(player);
       performAnKong(player, kongTiles);
 
-      // Draw replacement tile from wall tail
+      // Draw replacement tile from wall tail (don't sort — stays separated)
       const drawResult = drawReplacementTile(game.wall);
       if (drawResult.tile) {
         game.wall = drawResult.remaining;
         player.hand.push(drawResult.tile);
-        player.hand = sortHand(player.hand);
       }
 
       game.currentSeat = player.seat;
@@ -218,12 +218,11 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
       const buKongResult = canBuKong(player)!;
       performBuKong(player, buKongResult.pongMeldIndex, buKongResult.tile);
 
-      // Draw replacement tile from wall tail
+      // Draw replacement tile from wall tail (don't sort — stays separated)
       const drawResult = drawReplacementTile(game.wall);
       if (drawResult.tile) {
         game.wall = drawResult.remaining;
         player.hand.push(drawResult.tile);
-        player.hand = sortHand(player.hand);
       }
 
       game.currentSeat = player.seat;
@@ -246,12 +245,11 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
         tiles: removed,
       });
 
-      // Draw replacement tile from wall tail
+      // Draw replacement tile from wall tail (don't sort — stays separated)
       const drawResult = drawReplacementTile(game.wall);
       if (drawResult.tile) {
         game.wall = drawResult.remaining;
         player.hand.push(drawResult.tile);
-        player.hand = sortHand(player.hand);
       }
 
       game.currentSeat = player.seat;
@@ -305,9 +303,7 @@ function processAITurns(game: GameState): void {
       if (drawResult.tile) {
         game.wall = drawResult.remaining;
         game.players[game.currentSeat].hand.push(drawResult.tile);
-        game.players[game.currentSeat].hand = sortHand(
-          game.players[game.currentSeat].hand,
-        );
+        // Don't sort — drawn tile stays separated at end
         game.lastDiscard = null;
         game.lastDiscardSeat = null;
       } else {
@@ -329,7 +325,7 @@ function doAITurn(game: GameState): void {
   }
   game.wall = drawResult.remaining;
   player.hand.push(drawResult.tile);
-  player.hand = sortHand(player.hand);
+  // Don't sort — drawn tile stays separated at end
 
   // Clear previous lastDiscard for the AI's own turn
   game.lastDiscard = null;
@@ -353,7 +349,7 @@ function doAITurn(game: GameState): void {
     if (repl.tile) {
       game.wall = repl.remaining;
       player.hand.push(repl.tile);
-      player.hand = sortHand(player.hand);
+      // Don't sort — replacement tile stays separated
     }
     // After kong, check win again
     const winAfterKong = checkWin(player.hand, game.hunTiles, patternRegistry);
@@ -413,6 +409,8 @@ function doAITurn(game: GameState): void {
   // 4. AI chooses a tile to discard
   const discardIndex = aiDecideDiscard(player);
   const discardedTile = player.hand.splice(discardIndex, 1)[0];
+  // Re-sort after discarding
+  player.hand = sortHand(player.hand);
   player.discards.push(discardedTile);
   game.lastDiscard = discardedTile;
   game.lastDiscardSeat = game.currentSeat;
