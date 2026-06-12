@@ -99,20 +99,6 @@ export default function PlayerArea({
         </div>
       )}
 
-      {/* Discards */}
-      {player.discards.length > 0 && (
-        <div className="flex flex-wrap gap-0.5">
-          {player.discards.map((tile, di) => (
-            <span
-              key={`${tile.id}-${di}`}
-              className="text-[9px] text-gray-400 bg-gray-800 rounded px-1 py-0.5 border border-gray-700"
-            >
-              {getTileName(tile)}
-            </span>
-          ))}
-        </div>
-      )}
-
       {/* Hand */}
       {player.hand.length > 0 && (
         <PlayerHand

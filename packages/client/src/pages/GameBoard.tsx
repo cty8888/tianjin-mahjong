@@ -155,27 +155,53 @@ export default function GameBoard({
           ))}
         </div>
 
-        {/* Center: table info */}
-        <div className="col-start-2 row-start-2 flex flex-col items-center justify-center gap-1">
-          <div className="bg-green-900/40 rounded-full w-20 h-20 sm:w-28 sm:h-28 flex flex-col items-center justify-center border-2 border-green-800/50">
-            {isPlaying && (
-              <>
-                <span className="text-[10px] text-gray-400">剩余</span>
-                <span className="text-xl font-bold text-amber-300">{game.wall.length}</span>
-                <span className="text-[10px] text-gray-400">张</span>
-              </>
-            )}
-            {!isPlaying && (
-              <span className="text-xs text-gray-500">等待开始</span>
-            )}
+        {/* Center: table info + discards arranged as a square */}
+        <div className="col-start-2 row-start-2 flex flex-col items-center justify-center gap-2">
+          {/* Top side discards */}
+          <div className="flex gap-1 flex-wrap justify-center max-w-[200px]">
+            {positionSlots.top.flatMap(p => p.discards).map((t, i) => (
+              <span key={i} className="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600">{getTileName(t)}</span>
+            ))}
           </div>
-          {isPlaying && game.lastDiscard && (
-            <div className="text-[10px] text-gray-500 text-center">
-              <span>弃牌: </span>
-              <span className="text-gray-300">{getTileName(game.lastDiscard)}</span>
-              <span> (玩家 {(game.lastDiscardSeat ?? 0) + 1})</span>
+
+          <div className="flex items-center gap-2">
+            {/* Left side discards */}
+            <div className="flex flex-col gap-0.5 items-end max-h-[120px] overflow-hidden">
+              {positionSlots.left.flatMap(p => p.discards).slice(-8).map((t, i) => (
+                <span key={i} className="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600">{getTileName(t)}</span>
+              ))}
             </div>
-          )}
+
+            {/* Center circle */}
+            <div className="bg-green-900/40 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex flex-col items-center justify-center border-2 border-green-800/50 shrink-0">
+              {isPlaying ? (
+                <>
+                  <span className="text-[10px] text-gray-400">剩余</span>
+                  <span className="text-xl font-bold text-amber-300">{game.wall.length}</span>
+                  <span className="text-[10px] text-gray-400">张</span>
+                  {game.lastDiscard && (
+                    <span className="text-[9px] text-gray-500 mt-0.5">{getTileName(game.lastDiscard)}</span>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs text-gray-500">等待开始</span>
+              )}
+            </div>
+
+            {/* Right side discards */}
+            <div className="flex flex-col gap-0.5 items-start max-h-[120px] overflow-hidden">
+              {positionSlots.right.flatMap(p => p.discards).slice(-8).map((t, i) => (
+                <span key={i} className="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600">{getTileName(t)}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom side discards (human) */}
+          <div className="flex gap-1 flex-wrap justify-center max-w-[280px]">
+            {humanPlayer.discards.map((t, i) => (
+              <span key={i} className="text-xs bg-amber-100 text-gray-900 rounded px-1.5 py-0.5 border border-amber-400 font-medium">{getTileName(t)}</span>
+            ))}
+          </div>
         </div>
 
         {/* Right: AI player */}

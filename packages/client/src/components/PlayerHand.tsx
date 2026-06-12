@@ -52,8 +52,6 @@ export default function PlayerHand({
     if (isSelected) {
       ring = 'ring-2 ring-green-400';
       lift = isVertical ? 'translate-x-1.5' : '-translate-y-1.5';
-    } else if (isLegal && isHuman) {
-      ring = 'ring-1 ring-green-300/50';
     }
 
     const clickable = isHuman && isLegal && onTileClick;
