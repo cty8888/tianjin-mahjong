@@ -10,7 +10,7 @@ export function createGameRouter(): Router {
   const router = Router();
 
   // POST /api/games — Create a new game
-  router.post('/', (req: Request, res: Response) => {
+  router.post('/', async (req: Request, res: Response) => {
     const { playerCount } = req.body;
 
     if (typeof playerCount !== 'number' || playerCount < 2 || playerCount > 4) {
@@ -22,7 +22,7 @@ export function createGameRouter(): Router {
     }
 
     try {
-      const game = createNewGame(playerCount);
+      const game = await createNewGame(playerCount);
       res.status(201).json({ game: { id: game.id, state: game } });
     } catch (err: any) {
       res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
@@ -50,7 +50,7 @@ export function createGameRouter(): Router {
   });
 
   // POST /api/games/:id/actions — Submit a player action
-  router.post('/:id/actions', (req: Request, res: Response) => {
+  router.post('/:id/actions', async (req: Request, res: Response) => {
     const game = getGame(req.params.id);
     if (!game) {
       res.status(404).json({ error: 'GAME_NOT_FOUND' });
@@ -66,7 +66,7 @@ export function createGameRouter(): Router {
       return;
     }
 
-    const result = applyAction(game, action);
+    const result = await applyAction(game, action);
     if (result.error) {
       res.status(400).json(result);
       return;

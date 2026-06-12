@@ -7,7 +7,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import express from 'express';
 import http from 'node:http';
 import { createGameRouter } from './routes/game';
-import { createNewGame, getGame, getActions, applyAction, patternRegistry } from './services/game-service';
+import { createNewGame, getGame, getActions, applyAction, patternRegistry, setAIDelay } from './services/game-service';
+setAIDelay(0); // No delay in tests
 import type { PlayerAction } from '@tj-mahjong/shared';
 
 // ---------------------------------------------------------------------------
@@ -73,8 +74,8 @@ function createTestApp() {
 // ---------------------------------------------------------------------------
 
 describe('Game Service', () => {
-  it('createNewGame creates a 4-player game', () => {
-    const game = createNewGame(4);
+  it('createNewGame creates a 4-player game', async () => {
+    const game = await createNewGame(4);
 
     expect(game).toBeDefined();
     expect(game.id).toMatch(/^game-/);
@@ -102,13 +103,13 @@ describe('Game Service', () => {
     expect(game.wall.length).toBeLessThan(136);
   });
 
-  it('createNewGame rejects invalid playerCount', () => {
-    expect(() => createNewGame(1)).toThrow();
-    expect(() => createNewGame(5)).toThrow();
+  it('createNewGame rejects invalid playerCount', async () => {
+    await expect(createNewGame(1)).rejects.toThrow();
+    await expect(createNewGame(5)).rejects.toThrow();
   });
 
-  it('getGame retrieves stored game', () => {
-    const game = createNewGame(4);
+  it('getGame retrieves stored game', async () => {
+    const game = await createNewGame(4);
     const retrieved = getGame(game.id);
     expect(retrieved).toBeDefined();
     expect(retrieved!.id).toBe(game.id);
@@ -118,8 +119,8 @@ describe('Game Service', () => {
     expect(getGame('nonexistent')).toBeUndefined();
   });
 
-  it('getActions returns actions for current player on their turn', () => {
-    const game = createNewGame(4);
+  it('getActions returns actions for current player on their turn', async () => {
+    const game = await createNewGame(4);
     // Force currentSeat to be the human (seat 0) for predictable testing
     game.currentSeat = 0;
 
@@ -136,8 +137,8 @@ describe('Game Service', () => {
     expect(actions!.canMingKong).toBe(false);
   });
 
-  it('getActions shows pong/kong when another player discards', () => {
-    const game = createNewGame(4);
+  it('getActions shows pong/kong when another player discards', async () => {
+    const game = await createNewGame(4);
     game.currentSeat = 0; // human's turn
 
     // Simulate AI player (seat 1) discarding a tile that human has 2+ copies of
@@ -170,8 +171,8 @@ describe('Game Service', () => {
     }
   });
 
-  it('applyAction with valid discard advances game', () => {
-    const game = createNewGame(4);
+  it('applyAction with valid discard advances game', async () => {
+    const game = await createNewGame(4);
     game.currentSeat = 0; // human's turn
     // Clear any prior lastDiscard so it's player's own turn
     game.lastDiscard = null;
@@ -184,7 +185,7 @@ describe('Game Service', () => {
     const discardCountBefore = game.players[0].discards.length;
 
     const action: PlayerAction = { type: 'discard', tileIndex: legalIndices[0] };
-    const result = applyAction(game, action);
+    const result = await applyAction(game, action);
 
     expect(result.error).toBeUndefined();
     // Human's discard pile increased by 1
@@ -193,32 +194,32 @@ describe('Game Service', () => {
     expect(game.phase === 'playing' || game.phase === 'finished').toBe(true);
   });
 
-  it('applyAction with invalid discard index returns error', () => {
-    const game = createNewGame(4);
+  it('applyAction with invalid discard index returns error', async () => {
+    const game = await createNewGame(4);
     game.currentSeat = 0;
 
     const action: PlayerAction = { type: 'discard', tileIndex: -1 };
-    const result = applyAction(game, action);
+    const result = await applyAction(game, action);
     expect(result.error).toBe('INVALID_ACTION');
   });
 
-  it('applyAction rejects hun discard', () => {
-    const game = createNewGame(4);
+  it('applyAction rejects hun discard', async () => {
+    const game = await createNewGame(4);
     game.currentSeat = 0;
 
     // Find a hun tile if any
     const hunIndex = game.players[0].hand.findIndex((t) => t.isHun);
     if (hunIndex !== -1) {
       const action: PlayerAction = { type: 'discard', tileIndex: hunIndex };
-      const result = applyAction(game, action);
+      const result = await applyAction(game, action);
       expect(result.error).toBe('INVALID_ACTION');
       expect(result.message).toContain('混儿');
     }
   });
 
-  it('applyAction with win when hand is winning', () => {
+  it('applyAction with win when hand is winning', async () => {
     // Create a game and manually set up a winning hand
-    const game = createNewGame(4);
+    const game = await createNewGame(4);
     game.currentSeat = 0;
 
     // Build a four-triplets-pair winning hand
@@ -264,7 +265,7 @@ describe('Game Service', () => {
       game.wall = game.wall.filter((t) => !usedIds.has(t.id));
 
       const action: PlayerAction = { type: 'win' };
-      const result = applyAction(game, action);
+      const result = await applyAction(game, action);
 
       if (!result.error) {
         expect(game.phase).toBe('finished');
@@ -430,8 +431,8 @@ describe('Game API Routes', () => {
 // ---------------------------------------------------------------------------
 
 describe('AI Turn Processing', () => {
-  it('AI turns auto-process after human action', () => {
-    const game = createNewGame(4);
+  it('AI turns auto-process after human action', async () => {
+    const game = await createNewGame(4);
 
     expect(game.phase).toBe('playing');
 
@@ -440,7 +441,7 @@ describe('AI Turn Processing', () => {
       // We can safely discard
       const actions = getActions(game)!;
       if (actions.legalDiscardIndices.length > 0) {
-        const result = applyAction(game, {
+        const result = await applyAction(game, {
           type: 'discard',
           tileIndex: actions.legalDiscardIndices[0],
         });
@@ -450,13 +451,13 @@ describe('AI Turn Processing', () => {
     }
   });
 
-  it('does not crash with full AI vs AI interaction', () => {
-    const game = createNewGame(2);
+  it('does not crash with full AI vs AI interaction', async () => {
+    const game = await createNewGame(2);
 
     if (game.currentSeat === 0) {
       const actions = getActions(game)!;
       if (actions.legalDiscardIndices.length > 0) {
-        applyAction(game, { type: 'discard', tileIndex: actions.legalDiscardIndices[0] });
+        await applyAction(game, { type: 'discard', tileIndex: actions.legalDiscardIndices[0] });
         expect(game.phase === 'playing' || game.phase === 'finished').toBe(true);
       }
     }

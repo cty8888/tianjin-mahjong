@@ -45,13 +45,13 @@ patternRegistry.register(fourTripletsPairChecker);
 // Public API
 // ---------------------------------------------------------------------------
 
-export function createNewGame(playerCount: number): GameState {
+export async function createNewGame(playerCount: number): Promise<GameState> {
   const game = createGame(playerCount);
   games.set(game.id, game);
 
   // If the dealer is AI, process their turn immediately
   if (!game.players[game.currentSeat].isHuman) {
-    processAITurns(game);
+    await await processAITurns(game);
   }
 
   return game;
@@ -125,7 +125,7 @@ export function getActions(
   return result;
 }
 
-export function applyAction(game: GameState, action: PlayerAction): { error?: string; message?: string } {
+export async function applyAction(game: GameState, action: PlayerAction): Promise<{ error?: string; message?: string }> {
   const player = game.players[game.currentSeat];
 
   // Validate the action
@@ -160,11 +160,11 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
         } else {
           // AI: auto-decide and apply
           game.currentSeat = responder;
-          applyAIResponse(game, game.players[responder], discardedTile);
+          await applyAIResponse(game, game.players[responder], discardedTile);
         }
       } else {
         // No one responds, process AI turns if needed
-        processAITurns(game);
+        await processAITurns(game);
       }
       break;
     }
@@ -176,7 +176,7 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
       game.lastDiscard = null;
       game.lastDiscardSeat = null;
       game.currentSeat = player.seat;
-      processAITurns(game);
+      await processAITurns(game);
       break;
     }
 
@@ -194,7 +194,7 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
       game.lastDiscard = null;
       game.lastDiscardSeat = null;
       game.currentSeat = player.seat;
-      processAITurns(game);
+      await processAITurns(game);
       break;
     }
 
@@ -210,7 +210,7 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
       }
 
       game.currentSeat = player.seat;
-      processAITurns(game);
+      await processAITurns(game);
       break;
     }
 
@@ -226,7 +226,7 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
       }
 
       game.currentSeat = player.seat;
-      processAITurns(game);
+      await processAITurns(game);
       break;
     }
 
@@ -253,7 +253,7 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
       }
 
       game.currentSeat = player.seat;
-      processAITurns(game);
+      await processAITurns(game);
       break;
     }
 
@@ -277,7 +277,7 @@ export function applyAction(game: GameState, action: PlayerAction): { error?: st
 // AI turn processing
 // ---------------------------------------------------------------------------
 
-function processAITurns(game: GameState): void {
+async function processAITurns(game: GameState): Promise<void> {
   const maxIterations = 100; // safety valve
   let iterations = 0;
 
@@ -286,7 +286,7 @@ function processAITurns(game: GameState): void {
     !game.players[game.currentSeat].isHuman &&
     iterations < maxIterations
   ) {
-    doAITurn(game);
+    await doAITurn(game);
     iterations++;
   }
 
@@ -313,8 +313,15 @@ function processAITurns(game: GameState): void {
   }
 }
 
-function doAITurn(game: GameState): void {
+let AI_DELAY_MS = 2000;
+export function setAIDelay(ms: number) { AI_DELAY_MS = ms; }
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function doAITurn(game: GameState): Promise<void> {
   const player = game.players[game.currentSeat];
+
+  // 0. Brief delay so human can see what's happening
+  await delay(AI_DELAY_MS);
 
   // 1. Draw tile from wall head
   const drawResult = drawTile(game.wall);
@@ -428,7 +435,7 @@ function doAITurn(game: GameState): void {
     } else {
       // AI responder: auto-decide
       game.currentSeat = responder;
-      applyAIResponse(game, game.players[responder], discardedTile);
+      await applyAIResponse(game, game.players[responder], discardedTile);
     }
   } else {
     // No one responds, continue to next seat
@@ -552,7 +559,7 @@ function findResponder(
   return null;
 }
 
-function applyAIResponse(game: GameState, player: Player, discardTile: Tile): void {
+async function applyAIResponse(game: GameState, player: Player, discardTile: Tile): Promise<void> {
   const decision = aiDecideResponse(player, discardTile);
 
   if (decision === 'ming-kong') {
@@ -574,18 +581,18 @@ function applyAIResponse(game: GameState, player: Player, discardTile: Tile): vo
       game.phase = 'finished';
       return;
     }
-    processAITurns(game);
+    await processAITurns(game);
   } else if (decision === 'pong') {
     performPong(player, discardTile);
     player.hand = sortHand(player.hand);
     game.lastDiscard = null;
     game.lastDiscardSeat = null;
     game.currentSeat = player.seat;
-    processAITurns(game);
+    await processAITurns(game);
   } else {
     // AI passes — continue scanning for the next responder in priority order
     // The discarder and this player have already been checked; scan remaining seats
-    processRemainingResponders(game, discardTile, player.seat);
+    await processRemainingResponders(game, discardTile, player.seat);
   }
 }
 
@@ -594,7 +601,7 @@ function applyAIResponse(game: GameState, player: Player, discardTile: Tile): vo
  * Scans all remaining seats (excluding the discarder and the already-checked player)
  * in priority order.
  */
-function processRemainingResponders(
+async function processRemainingResponders(
   game: GameState,
   discardTile: Tile,
   alreadyCheckedSeat: number,
@@ -620,7 +627,7 @@ function processRemainingResponders(
         return;
       } else {
         game.currentSeat = current;
-        applyAIResponse(game, p, discardTile);
+        await applyAIResponse(game, p, discardTile);
         // applyAIResponse may have changed game state (phase finished, or AI claimed it)
         // If this response consumed the discard (pong/kong), lastDiscard is now null
         if (game.lastDiscard === null || game.phase === 'finished') {
@@ -637,7 +644,7 @@ function processRemainingResponders(
 
   // No one responded; advance to the seat after the discarder's successor
   game.currentSeat = getNextSeat(discarderSeat, playerCount);
-  processAITurns(game);
+  await processAITurns(game);
 }
 
 // Export for testing
