@@ -180,7 +180,7 @@ export function createGame(playerCount: number): GameState {
   markHunTiles(remaining, hunTiles);
 
   // 4. Random dealer seat
-  const dealerSeat = Math.floor(Math.random() * playerCount);
+  const dealerSeat = 0; // Human (seat 0) is always dealer
 
   // 5. Create players (seat 0 = human, rest = AI)
   const players: Player[] = [];
