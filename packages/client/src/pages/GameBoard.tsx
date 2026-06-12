@@ -158,9 +158,9 @@ export default function GameBoard({
         {/* Center: table info + discards arranged as a square */}
         <div className="col-start-2 row-start-2 flex flex-col items-center justify-center gap-2">
           {/* Top side discards */}
-          <div className="flex gap-1 flex-wrap justify-center max-w-[200px]">
+          <div className="flex gap-0.5 flex-wrap justify-center max-w-[180px]">
             {positionSlots.top.flatMap(p => p.discards).map((t, i) => (
-              <span key={i} className="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600">{getTileName(t)}</span>
+              <span key={i} className="inline-flex items-center justify-center w-6 h-9 text-[10px] bg-gray-700 text-gray-200 rounded border border-gray-600 leading-tight text-center">{getTileName(t)}</span>
             ))}
           </div>
 
@@ -168,7 +168,7 @@ export default function GameBoard({
             {/* Left side discards */}
             <div className="flex flex-col gap-0.5 items-end max-h-[120px] overflow-hidden">
               {positionSlots.left.flatMap(p => p.discards).slice(-8).map((t, i) => (
-                <span key={i} className="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600">{getTileName(t)}</span>
+                <span key={i} className="inline-flex items-center justify-center w-6 h-9 text-[10px] bg-gray-700 text-gray-200 rounded border border-gray-600 leading-tight text-center">{getTileName(t)}</span>
               ))}
             </div>
 
@@ -191,15 +191,15 @@ export default function GameBoard({
             {/* Right side discards */}
             <div className="flex flex-col gap-0.5 items-start max-h-[120px] overflow-hidden">
               {positionSlots.right.flatMap(p => p.discards).slice(-8).map((t, i) => (
-                <span key={i} className="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600">{getTileName(t)}</span>
+                <span key={i} className="inline-flex items-center justify-center w-6 h-9 text-[10px] bg-gray-700 text-gray-200 rounded border border-gray-600 leading-tight text-center">{getTileName(t)}</span>
               ))}
             </div>
           </div>
 
           {/* Bottom side discards (human) */}
-          <div className="flex gap-1 flex-wrap justify-center max-w-[280px]">
+          <div className="flex gap-0.5 flex-wrap justify-center max-w-[260px]">
             {humanPlayer.discards.map((t, i) => (
-              <span key={i} className="text-xs bg-amber-100 text-gray-900 rounded px-1.5 py-0.5 border border-amber-400 font-medium">{getTileName(t)}</span>
+              <span key={i} className="inline-flex items-center justify-center w-6 h-9 text-[10px] bg-amber-100 text-gray-900 rounded border border-amber-400 font-medium leading-tight text-center">{getTileName(t)}</span>
             ))}
           </div>
         </div>
@@ -228,13 +228,6 @@ export default function GameBoard({
           canAnKong={actions.canAnKong} canBuKong={actions.canBuKong}
           canJinKong={actions.canJinKong} canWin={actions.canWin}
           onAction={handleAction} loading={loading} />
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 pointer-events-none">
-          <span className="text-sm text-white bg-gray-800 px-4 py-2 rounded-lg">处理中...</span>
-        </div>
       )}
 
       {/* Result */}
