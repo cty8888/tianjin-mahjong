@@ -92,13 +92,97 @@
 
 ---
 
-### 2026-06-12 | Task 3 — 牌墙操作 (进行中)
+### 2026-06-12 | Task 3 — 牌墙操作 ✅
+
+- **产出**：commit `4a0507d` — deck.ts + deck.test.ts (22 tests)
+- **Spec 合规**：✅
+- **代码质量**：✅
+
+### 2026-06-12 | Task 4 — 游戏状态管理 ✅
+
+- **产出**：commit `a392440` — game-state.ts (221 lines, 39 tests)
+- **Spec 合规**：✅ — 混儿 7 张规则正确
+- **代码质量**：✅
+
+### 2026-06-12 | Task 5 — 碰与杠规则 ✅
+
+- **产出**：commit `8f0ec02` — rules.ts (207 lines, 40 tests)
+- **Spec 合规**：✅ — 无吃、混儿不可出
+- **代码质量**：✅
+
+### 2026-06-12 | Task 6 — 胡牌牌型插件系统 ✅
+
+- **产出**：commit `0771e83` — PatternRegistry + fourTripletsPairChecker (10 tests)
+- **Spec 合规**：✅ — 可配置牌型架构
+- **代码质量**：✅
+
+### 2026-06-12 | Task 7 — 手牌评估 ✅
+
+- **产出**：commit `aa42ec2` — hand.ts (checkWin + isTing)
+- **Spec 合规**：✅
+- **代码质量**：✅
+
+### 2026-06-12 | Task 8 — AI 决策 ✅
+
+- **产出**：commit `7c5cafd` — ai.ts (v1 随机 AI, 10 tests)
+- **Spec 合规**：✅
+- **代码质量**：✅
+
+---
+
+### 2026-06-12 | Task 9 — Express 服务端 ✅
 
 - **技能**：subagent-driven-development
-- **subagent**：general-purpose agent (background)
-- **任务**：创建 `packages/shared/src/deck.ts` 和 `deck.test.ts`
-- **分支**：phase1-shared
-- **状态**：implementer 已派发，等待完成...
+- **subagent**：general-purpose agent
+- **任务**：创建 Express 服务器、游戏路由、游戏服务层
+- **产出**：commit `02ae63e`
+  - `game-service.ts` (646 lines) — 核心编排：创建游戏、应用操作、AI 自动回合
+  - `routes/game.ts` (90 lines) — REST API 4 个端点
+  - `index.ts` (42 lines) — Express 入口
+  - `game.test.ts` (465 lines, 26 tests)
+- **Spec 合规**：✅ — 混儿不可出、仅自摸胡、无吃
+- **代码质量**：✅
+
+---
+
+### 2026-06-12 | Tasks 10-12 — React 客户端 ✅
+
+- **技能**：subagent-driven-development
+- **subagent**：general-purpose agent
+- **任务**：React 前端 — 游戏界面、组件、持久化
+- **产出**：commit `bc0771d` (910 lines)
+  - `api.ts` — API 通信层
+  - `GameSetup.tsx` — 创建对局页面
+  - `GameBoard.tsx` — 主游戏页面（248 lines）
+  - `PlayerHand.tsx` / `PlayerArea.tsx` — 手牌/玩家区域组件
+  - `ActionPanel.tsx` / `GameResult.tsx` — 操作面板/结算弹窗
+  - `useGamePersistence.ts` — localStorage 持久化
+- **Spec 合规**：✅
+- **代码质量**：✅
+
+---
+
+### 2026-06-12 | Tasks 13-14 — Docker + CI ✅
+
+- **技能**：controller 直接实现
+- **产出**：commit `32f1507`
+  - `Dockerfile` — 多阶段构建
+  - `docker-compose.yml`
+  - `.github/workflows/ci.yml` — 测试 + Docker 构建
+
+---
+
+## 项目总结
+
+| 项目 | 数值 |
+|------|------|
+| 总 commits | 14 |
+| 总测试数 | **194** (shared 168 + server 26) |
+| 代码行数 | ~5,200 行（含测试） |
+| Subagent 派发 | 8 次 |
+| 分支 | phase1-shared, phase2-server, phase3-client → master |
+| 技能触发 | brainstorming → writing-plans → subagent-driven-development |
+| 人工干预 | 规则修正（9 项）、配置编写、代码审查 |
 
 ---
 
