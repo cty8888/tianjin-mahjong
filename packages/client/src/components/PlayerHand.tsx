@@ -9,6 +9,7 @@ import type { Tile } from '@tj-mahjong/shared';
 interface PlayerHandProps {
   tiles: Tile[];
   isHuman: boolean;
+  orientation?: 'horizontal' | 'vertical';
   legalIndices?: number[];
   selectedIndex?: number | null;
   onTileClick?: (index: number) => void;
@@ -32,14 +33,23 @@ function tileDisplay(tile: Tile, isHuman: boolean): string {
 export default function PlayerHand({
   tiles,
   isHuman,
+  orientation = 'horizontal',
   legalIndices,
   selectedIndex,
   onTileClick,
 }: PlayerHandProps) {
   const legalSet = legalIndices ? new Set(legalIndices) : null;
 
+  const isVertical = orientation === 'vertical';
+
   return (
-    <div className="flex flex-wrap justify-center gap-1">
+    <div
+      className={
+        isVertical
+          ? 'flex flex-col items-center gap-1'
+          : 'flex flex-wrap justify-center gap-1'
+      }
+    >
       {tiles.map((tile, index) => {
         const isLegal = legalSet ? legalSet.has(index) : false;
         const isSelected = selectedIndex === index;
@@ -48,7 +58,7 @@ export default function PlayerHand({
         let transform = '';
         if (isSelected) {
           ring = 'ring-2 ring-green-400';
-          transform = '-translate-y-1.5';
+          transform = isVertical ? 'translate-x-1.5' : '-translate-y-1.5';
         } else if (isLegal && isHuman) {
           ring = 'ring-1 ring-green-300/50';
         }
@@ -62,9 +72,9 @@ export default function PlayerHand({
             disabled={!clickable}
             onClick={() => clickable && onTileClick(index)}
             className={[
-              'relative flex flex-col items-center justify-center',
-              'w-10 h-14 rounded-md border text-xs font-bold',
+              'relative flex flex-col items-center justify-center rounded-md border text-xs font-bold',
               'transition-all duration-100 select-none',
+              isVertical ? 'w-14 h-10' : 'w-10 h-14',
               tileBg(tile, isHuman),
               ring,
               transform,

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
-// GameBoard page — main game board orchestrating all components.
-// Task 11 — AI players on top, human on bottom, action panel, auto-save.
+// GameBoard page — 4-position mahjong table with CSS Grid layout.
+// Human at bottom, AI at right/top/left around the table.
 // ---------------------------------------------------------------------------
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -17,6 +17,19 @@ interface GameBoardProps {
   onClearGame: () => void;
 }
 
+/** Map a player seat to table position, relative to human at bottom */
+function seatToPosition(
+  seat: number,
+  humanSeat: number,
+  playerCount: number,
+  isHuman: boolean,
+): 'bottom' | 'right' | 'top' | 'left' {
+  if (isHuman) return 'bottom';
+  const positions: Array<'bottom' | 'right' | 'top' | 'left'> = ['bottom', 'right', 'top', 'left'];
+  const offset = (seat - humanSeat + playerCount) % playerCount;
+  return positions[offset] ?? 'top';
+}
+
 export default function GameBoard({
   game,
   onGameStateChange,
@@ -26,14 +39,9 @@ export default function GameBoard({
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // Available actions from the server
   const [actions, setActions] = useState<{
-    canPong: boolean;
-    canMingKong: boolean;
-    canAnKong: boolean;
-    canBuKong: boolean;
-    canJinKong: boolean;
-    canWin: boolean;
+    canPong: boolean; canMingKong: boolean; canAnKong: boolean;
+    canBuKong: boolean; canJinKong: boolean; canWin: boolean;
     legalDiscardIndices: number[];
   } | null>(null);
 
@@ -42,206 +50,170 @@ export default function GameBoard({
   const refreshActions = useCallback(async (currentGame: GameState) => {
     if (pendingRefresh.current) return;
     pendingRefresh.current = true;
-
     try {
       const acts = await getActions(currentGame.id);
       setActions(acts);
       setError(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      setError(`获取操作失败: ${msg}`);
+      setError(`获取操作失败: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       pendingRefresh.current = false;
     }
   }, []);
 
-  // Fetch actions whenever the human's turn starts
   useEffect(() => {
-    if (game.phase !== 'playing') {
-      setActions(null);
-      return;
-    }
-    if (game.players[game.currentSeat]?.isHuman) {
-      refreshActions(game);
-    } else {
-      setActions(null);
-    }
+    if (game.phase !== 'playing') { setActions(null); return; }
+    if (game.players[game.currentSeat]?.isHuman) refreshActions(game);
+    else setActions(null);
   }, [game, refreshActions]);
 
-  // Keep a ref to the latest game for use in async handlers
   const gameRef = useRef(game);
   gameRef.current = game;
 
-  // Submit an action to the server
-  const handleAction = useCallback(
-    async (action: PlayerAction) => {
-      setLoading(true);
-      setError(null);
-      setSelectedIndex(null);
-
-      try {
-        const currentGame = gameRef.current;
-        const newState = await submitAction(currentGame.id, action);
-        onGameStateChange(newState);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Unknown error';
-        setError(`操作失败: ${msg}`);
-        // Refresh actions to get back in sync
-        refreshActions(gameRef.current);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [onGameStateChange, refreshActions],
-  );
-
-  // Handle tile click for discard
-  const handleTileClick = useCallback(
-    (index: number) => {
-      if (!actions || loading) return;
-
-      if (selectedIndex === index) {
-        // Second click — confirm discard
-        handleAction({ type: 'discard', tileIndex: index });
-      } else {
-        setSelectedIndex(index);
-      }
-    },
-    [actions, selectedIndex, loading, handleAction],
-  );
-
-  // Handle "play again"
-  const handlePlayAgain = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setSelectedIndex(null);
-    setActions(null);
-
+  const handleAction = useCallback(async (action: PlayerAction) => {
+    setLoading(true); setError(null); setSelectedIndex(null);
     try {
-      const playerCount = gameRef.current.players.length;
-      const newState = await createGame(playerCount);
+      const newState = await submitAction(gameRef.current.id, action);
       onGameStateChange(newState);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      setError(`创建新游戏失败: ${msg}`);
-    } finally {
-      setLoading(false);
-    }
+      setError(`操作失败: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      refreshActions(gameRef.current);
+    } finally { setLoading(false); }
+  }, [onGameStateChange, refreshActions]);
+
+  const handleTileClick = useCallback((index: number) => {
+    if (!actions || loading) return;
+    if (selectedIndex === index) handleAction({ type: 'discard', tileIndex: index });
+    else setSelectedIndex(index);
+  }, [actions, selectedIndex, loading, handleAction]);
+
+  const handlePlayAgain = useCallback(async () => {
+    setLoading(true); setError(null); setSelectedIndex(null); setActions(null);
+    try {
+      const newState = await createGame(gameRef.current.players.length);
+      onGameStateChange(newState);
+    } catch (err: unknown) {
+      setError(`创建新游戏失败: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally { setLoading(false); }
   }, [onGameStateChange]);
 
-  const humanPlayer = game.players.find((p) => p.isHuman)!;
-  const isHumanTurn =
-    game.phase === 'playing' &&
-    game.players[game.currentSeat]?.isHuman;
+  const humanPlayer = game.players.find(p => p.isHuman)!;
+  const humanSeat = humanPlayer.seat;
+  const isHumanTurn = game.phase === 'playing' && game.players[game.currentSeat]?.isHuman;
 
-  const aiPlayers = game.players.filter((p) => !p.isHuman);
+  // Group AI players by their table position
+  const positionSlots: Record<string, typeof game.players> = { right: [], top: [], left: [] };
+  for (const p of game.players) {
+    if (p.isHuman) continue;
+    const pos = seatToPosition(p.seat, humanSeat, game.players.length, false);
+    if (pos !== 'bottom') positionSlots[pos].push(p);
+  }
+
+  const isPlaying = game.phase === 'playing';
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col pb-20">
+    <div className="h-screen bg-gray-950 flex flex-col overflow-hidden">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <header className="flex items-center justify-between px-4 py-2 border-b border-gray-800 shrink-0">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold text-amber-300">&#x1F004; 天津麻将</h1>
+          <h1 className="text-base font-bold text-amber-300">&#x1F004; 天津麻将</h1>
           {game.hunIndicator && (
             <div className="flex items-center gap-1 text-xs text-gray-400">
               <span>混儿:</span>
-              <span className="text-amber-400 font-bold">
-                {getTileName(game.hunIndicator)}
-              </span>
-              <span className="text-gray-600">
-                (下个是混儿)
-              </span>
+              <span className="text-amber-400 font-bold">{getTileName(game.hunIndicator)}</span>
             </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onClearGame}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 transition-all"
-        >
+        <button onClick={onClearGame}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 transition-all">
           退出对局
         </button>
       </header>
 
-      {/* Error banner */}
+      {/* Error */}
       {error && (
-        <div className="mx-4 mt-2 px-3 py-2 bg-red-900/50 border border-red-700/50 rounded-lg text-sm text-red-300 text-center">
+        <div className="mx-4 mt-1 px-3 py-1.5 bg-red-900/50 border border-red-700/50 rounded-lg text-xs text-red-300 text-center shrink-0">
           {error}
         </div>
       )}
 
-      {/* Main board area */}
-      <div className="flex-1 flex flex-col gap-3 p-4 max-w-5xl mx-auto w-full">
-        {/* AI players (top section) */}
-        <div className="flex flex-col gap-3">
-          {aiPlayers.map((player) => (
-            <PlayerArea
-              key={player.seat}
-              player={player}
-              isCurrent={
-                game.phase === 'playing' &&
-                game.currentSeat === player.seat
-              }
-              label={`玩家 ${player.seat + 1}`}
-            />
+      {/* Table Grid */}
+      <div className="flex-1 grid grid-cols-[minmax(120px,auto)_1fr_minmax(120px,auto)] grid-rows-[auto_1fr_auto] gap-1 p-2 min-h-0">
+        {/* Top: AI player */}
+        <div className="col-start-2 row-start-1 flex justify-center items-end">
+          {positionSlots.top.map(p => (
+            <PlayerArea key={p.seat} player={p} isCurrent={isPlaying && game.currentSeat === p.seat}
+              position="top" label={`玩家 ${p.seat + 1}`} />
           ))}
         </div>
 
-        {/* Center info: wall count + current discard */}
-        {game.phase === 'playing' && (
-          <div className="flex items-center justify-center gap-6 text-xs text-gray-500 py-2">
-            <span>剩余牌: {game.wall.length}</span>
-            {game.lastDiscard && (
-              <span>
-                最新弃牌: {getTileName(game.lastDiscard)} (玩家{' '}
-                {(game.lastDiscardSeat ?? 0) + 1})
-              </span>
+        {/* Left: AI player */}
+        <div className="col-start-1 row-start-2 flex items-center justify-end">
+          {positionSlots.left.map(p => (
+            <PlayerArea key={p.seat} player={p} isCurrent={isPlaying && game.currentSeat === p.seat}
+              position="left" label={`玩家 ${p.seat + 1}`} />
+          ))}
+        </div>
+
+        {/* Center: table info */}
+        <div className="col-start-2 row-start-2 flex flex-col items-center justify-center gap-1">
+          <div className="bg-green-900/40 rounded-full w-20 h-20 sm:w-28 sm:h-28 flex flex-col items-center justify-center border-2 border-green-800/50">
+            {isPlaying && (
+              <>
+                <span className="text-[10px] text-gray-400">剩余</span>
+                <span className="text-xl font-bold text-amber-300">{game.wall.length}</span>
+                <span className="text-[10px] text-gray-400">张</span>
+              </>
+            )}
+            {!isPlaying && (
+              <span className="text-xs text-gray-500">等待开始</span>
             )}
           </div>
-        )}
+          {isPlaying && game.lastDiscard && (
+            <div className="text-[10px] text-gray-500 text-center">
+              <span>弃牌: </span>
+              <span className="text-gray-300">{getTileName(game.lastDiscard)}</span>
+              <span> (玩家 {(game.lastDiscardSeat ?? 0) + 1})</span>
+            </div>
+          )}
+        </div>
 
-        {/* Human player (bottom section) */}
-        <PlayerArea
-          key={humanPlayer.seat}
-          player={humanPlayer}
-          isCurrent={isHumanTurn}
-          legalIndices={actions?.legalDiscardIndices}
-          selectedIndex={selectedIndex}
-          onTileClick={handleTileClick}
-          label="你"
-        />
+        {/* Right: AI player */}
+        <div className="col-start-3 row-start-2 flex items-center justify-start">
+          {positionSlots.right.map(p => (
+            <PlayerArea key={p.seat} player={p} isCurrent={isPlaying && game.currentSeat === p.seat}
+              position="right" label={`玩家 ${p.seat + 1}`} />
+          ))}
+        </div>
+
+        {/* Bottom: Human */}
+        <div className="col-start-2 row-start-3 flex justify-center items-start">
+          <PlayerArea player={humanPlayer} isCurrent={isHumanTurn}
+            position="bottom" label="你"
+            legalIndices={actions?.legalDiscardIndices}
+            selectedIndex={selectedIndex} onTileClick={handleTileClick} />
+        </div>
       </div>
 
-      {/* Action panel (fixed bottom bar for human turn) */}
+      {/* Action panel */}
       {isHumanTurn && actions && (
         <ActionPanel
-          canPong={actions.canPong}
-          canMingKong={actions.canMingKong}
-          canAnKong={actions.canAnKong}
-          canBuKong={actions.canBuKong}
-          canJinKong={actions.canJinKong}
-          canWin={actions.canWin}
-          onAction={handleAction}
-          loading={loading}
-        />
+          canPong={actions.canPong} canMingKong={actions.canMingKong}
+          canAnKong={actions.canAnKong} canBuKong={actions.canBuKong}
+          canJinKong={actions.canJinKong} canWin={actions.canWin}
+          onAction={handleAction} loading={loading} />
       )}
 
-      {/* Loading overlay */}
+      {/* Loading */}
       {loading && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 pointer-events-none">
-          <span className="text-sm text-white bg-gray-800 px-4 py-2 rounded-lg">
-            处理中...
-          </span>
+          <span className="text-sm text-white bg-gray-800 px-4 py-2 rounded-lg">处理中...</span>
         </div>
       )}
 
-      {/* Game result overlay */}
+      {/* Result */}
       {game.phase === 'finished' && (
-        <GameResult
-          game={game}
-          onPlayAgain={handlePlayAgain}
-          onLeave={onClearGame}
-        />
+        <GameResult game={game} onPlayAgain={handlePlayAgain} onLeave={onClearGame} />
       )}
     </div>
   );
